@@ -68,5 +68,5 @@ Final sketch is displayed and saved
 💻 Output
 ![output](https://github.com/qadir1991/Image-to-Sketch-Converter-Python-OpenCV-/blob/42025780020d1793e040c2e3566fd0e493183a91/Screenshot%20(124).png)
 ![output](https://github.com/qadir1991/Image-to-Sketch-Converter-Python-OpenCV-/blob/1deb26a7dfba9a7fa2cabb2db34351b3170f5f22/Screenshot%20(125).png)
-![output]()
+![output](https://github.com/qadir1991/Image-to-Sketch-Converter-Python-OpenCV-/blob/8f2afe009690028d6bfae17910c65f3f79068a0e/Screenshot%20(126).png)
 

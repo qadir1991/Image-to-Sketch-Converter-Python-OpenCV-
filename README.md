@@ -35,7 +35,7 @@ pip install opencv-python
 
 Clone the repository:
 
-git clone https://github.com/your-username/image-to-sketch.git
+git clone https://github.com/qadir1991/Image-to-Sketch-Converter-Python-OpenCV-.git
 
 Go to project folder:
 

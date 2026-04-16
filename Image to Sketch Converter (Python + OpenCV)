@@ -1,0 +1,162 @@
+import cv2
+import tkinter as tk
+from tkinter import filedialog, messagebox, ttk
+from PIL import Image, ImageTk
+import os
+
+class SketchApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Antigravity Sketch Studio")
+        self.root.geometry("1000x800")
+        self.root.configure(bg="#121212")
+
+        # Configuration
+        self.primary_color = "#121212"
+        self.secondary_color = "#1E1E1E"
+        self.accent_color = "#00A8E8"
+        self.text_primary = "#FFFFFF"
+        self.text_secondary = "#B0B0B0"
+        
+        # State
+        self.original_image = None
+        self.sketch_image = None
+        self.image_path = None
+        self.processed_cv_image = None
+
+        self.setup_ui()
+
+    def setup_ui(self):
+        # Header
+        header_frame = tk.Frame(self.root, bg=self.secondary_color, height=80)
+        header_frame.pack(fill="x", padx=0, pady=0)
+        
+        tk.Label(
+            header_frame, 
+            text="SKETCH STUDIO", 
+            font=("Segoe UI", 24, "bold"), 
+            bg=self.secondary_color, 
+            fg=self.accent_color
+        ).pack(pady=20)
+
+        # Main Layout
+        content_frame = tk.Frame(self.root, bg=self.primary_color)
+        content_frame.pack(expand=True, fill="both", padx=40, pady=20)
+
+        # Control Panel
+        controls = tk.Frame(content_frame, bg=self.secondary_color, bd=0)
+        controls.pack(fill="x", pady=(0, 20))
+        controls.config(padx=20, pady=15)
+
+        self.btn_upload = tk.Button(
+            controls, text="UPLOAD IMAGE", command=self.upload_image,
+            bg=self.accent_color, fg="white", font=("Segoe UI", 10, "bold"),
+            relief="flat", padx=20, pady=10, cursor="hand2",
+            activebackground="#007BB8"
+        )
+        self.btn_upload.pack(side="left", padx=5)
+
+        tk.Label(controls, text="Intensity:", bg=self.secondary_color, fg=self.text_secondary, font=("Segoe UI", 10)).pack(side="left", padx=(20, 5))
+        
+        self.intensity_slider = ttk.Scale(
+            controls, from_=3, to=99, orient="horizontal", command=self.update_sketch
+        )
+        self.intensity_slider.set(21)
+        self.intensity_slider.pack(side="left", padx=5, fill="x", expand=True)
+
+        self.btn_save = tk.Button(
+            controls, text="SAVE SKETCH", command=self.save_image,
+            bg="#28a745", fg="white", font=("Segoe UI", 10, "bold"),
+            relief="flat", padx=20, pady=10, cursor="hand2",
+            activebackground="#218838"
+        )
+        self.btn_save.pack(side="right", padx=5)
+
+        # Display Area
+        display_frame = tk.Frame(content_frame, bg=self.primary_color)
+        display_frame.pack(expand=True, fill="both")
+
+        # Left: Original
+        self.left_panel = tk.Frame(display_frame, bg=self.secondary_color, width=450)
+        self.left_panel.pack(side="left", expand=True, fill="both", padx=(0, 10))
+        tk.Label(self.left_panel, text="Original", bg=self.secondary_color, fg=self.text_secondary, font=("Segoe UI", 10, "bold")).pack(pady=5)
+        self.original_canvas = tk.Label(self.left_panel, bg="#000000")
+        self.original_canvas.pack(expand=True)
+
+        # Right: Sketch
+        self.right_panel = tk.Frame(display_frame, bg=self.secondary_color, width=450)
+        self.right_panel.pack(side="right", expand=True, fill="both", padx=(10, 0))
+        tk.Label(self.right_panel, text="Pencil Sketch", bg=self.secondary_color, fg=self.text_secondary, font=("Segoe UI", 10, "bold")).pack(pady=5)
+        self.sketch_canvas = tk.Label(self.right_panel, bg="#000000")
+        self.sketch_canvas.pack(expand=True)
+
+    def upload_image(self):
+        file_path = filedialog.askopenfilename(
+            filetypes=[("Image Files", "*.jpg *.jpeg *.png *.bmp *.webp")]
+        )
+        if not file_path:
+            return
+
+        self.image_path = file_path
+        self.original_image = cv2.imread(file_path)
+        self.display_on_label(self.original_image, self.original_canvas)
+        self.update_sketch()
+
+    def update_sketch(self, event=None):
+        if self.original_image is None:
+            return
+
+        # Get intensity (must be odd)
+        val = int(self.intensity_slider.get())
+        if val % 2 == 0: val += 1
+        
+        # OpenCV Logic
+        gray = cv2.cvtColor(self.original_image, cv2.COLOR_BGR2GRAY)
+        inverted = 255 - gray
+        blur = cv2.GaussianBlur(inverted, (val, val), 0)
+        inverted_blur = 255 - blur
+        self.processed_cv_image = cv2.divide(gray, inverted_blur, scale=256.0)
+
+        self.display_on_label(self.processed_cv_image, self.sketch_canvas, is_gray=True)
+
+    def display_on_label(self, cv_img, label, is_gray=False):
+        # Resize for preview
+        max_w, max_h = 440, 500
+        h, w = cv_img.shape[:2]
+        ratio = min(max_w/w, max_h/h)
+        new_w, new_h = int(w * ratio), int(h * ratio)
+        
+        resized = cv2.resize(cv_img, (new_w, new_h), interpolation=cv2.INTER_AREA)
+
+        if is_gray:
+            img = Image.fromarray(resized)
+        else:
+            img = Image.fromarray(cv2.cvtColor(resized, cv2.COLOR_BGR2RGB))
+
+        img_tk = ImageTk.PhotoImage(image=img)
+        label.config(image=img_tk)
+        label.image = img_tk
+
+    def save_image(self):
+        if self.processed_cv_image is None:
+            messagebox.showwarning("Warning", "No sketch to save!")
+            return
+
+        save_path = filedialog.asksaveasfilename(
+            defaultextension=".png",
+            filetypes=[("PNG files", "*.png"), ("JPEG files", "*.jpg"), ("All files", "*.*")]
+        )
+        
+        if save_path:
+            cv2.imwrite(save_path, self.processed_cv_image)
+            messagebox.showinfo("Success", f"Sketch saved to:\n{save_path}")
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    # Simple Style Tweak for Scale
+    style = ttk.Style()
+    style.theme_use('clam')
+    style.configure("Horizontal.TScale", background="#1E1E1E", troughcolor="#333333")
+    
+    app = SketchApp(root)
+    root.mainloop()

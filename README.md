@@ -66,7 +66,7 @@ Final sketch is displayed and saved
 
 
 💻 Output
-![output]()
+![output](https://github.com/qadir1991/Image-to-Sketch-Converter-Python-OpenCV-/blob/42025780020d1793e040c2e3566fd0e493183a91/Screenshot%20(124).png)
 ![output]()
 ![output]()
 
